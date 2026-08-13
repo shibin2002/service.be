@@ -1,0 +1,305 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  TECHNICIAN
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+}
+
+enum AttachmentType {
+  DEVICE_PHOTO
+  DAMAGE_PHOTO
+  INVOICE
+  DOCUMENT
+}
+
+enum EnquiryStatus {
+  OPEN
+  COMPLETED
+  REJECTED
+}
+
+enum NotificationType {
+  NEW_JOB
+  STAGE_UPDATED
+  TECHNICIAN_ASSIGNED
+  PAYMENT_COMPLETED
+  GENERAL
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  fullName     String    @map("full_name")
+  phone        String?
+  role         Role      @default(TECHNICIAN)
+  isActive     Boolean   @default(true) @map("is_active")
+  refreshToken String?   @map("refresh_token") @db.Text
+  resetToken   String?   @map("reset_token")
+  resetExpires DateTime? @map("reset_expires")
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  assignedJobs      ServiceJob[]       @relation("AssignedTechnician")
+  createdJobs       ServiceJob[]       @relation("JobCreatedBy")
+  stageLogs         StageLog[]
+  notifications     Notification[]
+  uploadedFiles     Attachment[]
+  paymentsRecorded  Payment[]          @relation("PaymentRecordedBy")
+
+  @@index([email])
+  @@index([role])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Customer {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  phone     String
+  email     String?
+  address   String?   @db.Text
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  devices ServiceJob[]
+
+  @@index([phone])
+  @@index([name])
+  @@index([email])
+  @@index([deletedAt])
+  @@map("customers")
+}
+
+model Device {
+  id                  String    @id @default(uuid()) @db.Uuid
+  deviceType          String    @map("device_type")
+  brand               String
+  model               String
+  color               String?
+  imei                String?
+  serialNumber        String?   @map("serial_number")
+  accessoriesReceived String?   @map("accessories_received") @db.Text
+  physicalCondition   String?   @map("physical_condition") @db.Text
+  deletedAt           DateTime? @map("deleted_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  serviceJobs ServiceJob[]
+
+  @@index([imei])
+  @@index([serialNumber])
+  @@index([deviceType])
+  @@index([brand, model])
+  @@index([deletedAt])
+  @@map("devices")
+}
+
+model Enquiry {
+  id              String        @id @default(uuid()) @db.Uuid
+  name            String
+  address         String        @db.Text
+  phone           String
+  enquiry         String        @db.Text
+  status          EnquiryStatus @default(OPEN) @map("status")
+  rejectionReason String?       @map("rejection_reason") @db.Text
+  deletedAt       DateTime?     @map("deleted_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([phone])
+  @@index([name])
+  @@index([deletedAt])
+  @@map("enquiries")
+}
+
+model WorkflowStage {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  color       String?   @default("#6366F1")
+  sortOrder   Int       @default(0) @map("sort_order")
+  isDefault   Boolean   @default(false) @map("is_default")
+  isFinal     Boolean   @default(false) @map("is_final")
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  jobs      ServiceJob[]
+  stageLogs StageLog[]
+
+  @@index([sortOrder])
+  @@index([deletedAt])
+  @@map("workflow_stages")
+}
+
+model ServiceJob {
+  id                   String    @id @default(uuid()) @db.Uuid
+  jobNumber            String    @unique @map("job_number")
+  customerId           String    @map("customer_id") @db.Uuid
+  deviceId             String    @map("device_id") @db.Uuid
+  reportedIssue        String    @map("reported_issue") @db.Text
+  diagnosis            String?   @db.Text
+  technicianNotes      String?   @map("technician_notes") @db.Text
+  assignedTechnicianId String?   @map("assigned_technician_id") @db.Uuid
+  createdById          String    @map("created_by_id") @db.Uuid
+  priority             Priority  @default(MEDIUM)
+  warranty             Boolean   @default(false)
+  currentStageId       String    @map("current_stage_id") @db.Uuid
+  estimatedDelivery    DateTime? @map("estimated_delivery")
+  receivedAt           DateTime  @default(now()) @map("received_at")
+  deletedAt            DateTime? @map("deleted_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  customer           Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  device             Device        @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  assignedTechnician User?         @relation("AssignedTechnician", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
+  createdBy          User          @relation("JobCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  currentStage       WorkflowStage @relation(fields: [currentStageId], references: [id], onDelete: Restrict)
+  stageLogs          StageLog[]
+  payment            Payment?
+  attachments        Attachment[]
+  notifications      Notification[]
+
+  @@index([jobNumber])
+  @@index([customerId])
+  @@index([deviceId])
+  @@index([assignedTechnicianId])
+  @@index([currentStageId])
+  @@index([priority])
+  @@index([receivedAt])
+  @@index([deletedAt])
+  @@map("service_jobs")
+}
+
+model StageLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  jobId     String   @map("job_id") @db.Uuid
+  stageId   String   @map("stage_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  note      String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  job   ServiceJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  stage WorkflowStage @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([jobId])
+  @@index([stageId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("stage_logs")
+}
+
+model Payment {
+  id           String        @id @default(uuid()) @db.Uuid
+  jobId        String        @unique @map("job_id") @db.Uuid
+  paid         Decimal       @default(0) @db.Decimal(12, 2)
+  total        Decimal       @default(0) @db.Decimal(12, 2)
+  balance      Decimal       @default(0) @db.Decimal(12, 2)
+  status       PaymentStatus @default(PENDING)
+  recordedById String?       @map("recorded_by_id") @db.Uuid
+  paidAt       DateTime?     @map("paid_at")
+  deletedAt    DateTime?     @map("deleted_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  job        ServiceJob     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  recordedBy User?          @relation("PaymentRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  items      PaymentItem[]
+
+  @@index([status])
+  @@index([deletedAt])
+  @@map("payments")
+}
+
+model PaymentItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  paymentId String   @map("payment_id") @db.Uuid
+  name      String
+  amount    Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@map("payment_items")
+}
+
+model Attachment {
+  id           String         @id @default(uuid()) @db.Uuid
+  jobId        String         @map("job_id") @db.Uuid
+  uploadedById String         @map("uploaded_by_id") @db.Uuid
+  type         AttachmentType
+  fileName     String         @map("file_name")
+  originalName String         @map("original_name")
+  mimeType     String         @map("mime_type")
+  size         Int
+  path         String
+  deletedAt    DateTime?      @map("deleted_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  job        ServiceJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  uploadedBy User       @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([jobId])
+  @@index([type])
+  @@index([deletedAt])
+  @@map("attachments")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  jobId     String?          @map("job_id") @db.Uuid
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  isRead    Boolean          @default(false) @map("is_read")
+  deletedAt DateTime?        @map("deleted_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  ServiceJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead])
+  @@index([type])
+  @@index([deletedAt])
+  @@map("notifications")
+}
+
+model JobCounter {
+  id        String   @id @default("default")
+  year      Int
+  sequence  Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("job_counters")
+}
