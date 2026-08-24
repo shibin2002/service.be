@@ -17,7 +17,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('*'),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
   RATE_LIMIT_MAX: z.coerce.number().default(200),
-  APP_NAME: z.string().default('Service Center API'),
+  APP_NAME: z.string().default('My Store API'),
   SEED_ADMIN_EMAIL: z.string().email().default('admin@servicecenter.com'),
   SEED_ADMIN_PASSWORD: z.string().min(8).default('Admin@12345'),
 });

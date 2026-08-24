@@ -7,7 +7,7 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: env.APP_NAME,
       version: '1.0.0',
-      description: 'Service Center Management API',
+      description: 'My Store Management API',
     },
     servers: [{ url: `http://localhost:${env.PORT}${env.API_PREFIX}` }],
     components: {
