@@ -20,6 +20,7 @@ import serviceJobsRoutes from './service-jobs/service-jobs.routes';
 import paymentsRoutes from './payments/payments.routes';
 import attachmentsRoutes from './attachments/attachments.routes';
 import notificationsRoutes from './notifications/notifications.routes';
+import attendanceRoutes from './attendance/attendance.routes';
 
 export function createApp() {
   const app = express();
@@ -64,6 +65,7 @@ export function createApp() {
   api.use('/payments', paymentsRoutes);
   api.use('/attachments', attachmentsRoutes);
   api.use('/notifications', notificationsRoutes);
+  api.use('/attendance', attendanceRoutes);
 
   app.use(env.API_PREFIX, api);
 

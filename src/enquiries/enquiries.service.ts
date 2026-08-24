@@ -26,6 +26,9 @@ export class EnquiriesService {
         skip,
         take: limit,
         orderBy: { createdAt: query.sortOrder },
+        include: {
+          createdBy: { select: { id: true, fullName: true } },
+        },
       }),
       prisma.enquiry.count({ where }),
     ]);
@@ -39,8 +42,11 @@ export class EnquiriesService {
     return enquiry;
   }
 
-  async create(dto: CreateEnquiryDto) {
-    return prisma.enquiry.create({ data: dto });
+  async create(dto: CreateEnquiryDto, createdById?: string) {
+    return prisma.enquiry.create({
+      data: { ...dto, createdById: createdById ?? null },
+      include: { createdBy: { select: { id: true, fullName: true } } },
+    });
   }
 
   async update(id: string, dto: UpdateEnquiryDto) {

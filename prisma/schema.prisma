@@ -64,10 +64,13 @@ model User {
 
   assignedJobs      ServiceJob[]       @relation("AssignedTechnician")
   createdJobs       ServiceJob[]       @relation("JobCreatedBy")
+  createdEnquiries  Enquiry[]
   stageLogs         StageLog[]
   notifications     Notification[]
   uploadedFiles     Attachment[]
   paymentsRecorded  Payment[]          @relation("PaymentRecordedBy")
+  attendanceRecords Attendance[]       @relation("AttendanceMarkedBy")
+  attendance        Attendance[]
 
   @@index([email])
   @@index([role])
@@ -126,9 +129,12 @@ model Enquiry {
   enquiry         String        @db.Text
   status          EnquiryStatus @default(OPEN) @map("status")
   rejectionReason String?       @map("rejection_reason") @db.Text
+  createdById     String?       @map("created_by_id") @db.Uuid
   deletedAt       DateTime?     @map("deleted_at")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([phone])
   @@index([name])
@@ -293,6 +299,25 @@ model Notification {
   @@index([type])
   @@index([deletedAt])
   @@map("notifications")
+}
+
+model Attendance {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  date        DateTime @db.Date
+  status      Boolean
+  markedById  String   @map("marked_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  markedBy User @relation("AttendanceMarkedBy", fields: [markedById], references: [id], onDelete: Restrict)
+
+  @@unique([userId, date])
+  @@index([date])
+  @@index([userId])
+  @@index([markedById])
+  @@map("attendance")
 }
 
 model JobCounter {

@@ -98,6 +98,7 @@ export class ServiceJobsService {
           device: true,
           currentStage: true,
           assignedTechnician: { select: { id: true, fullName: true } },
+          createdBy: { select: { id: true, fullName: true } },
           payment: true,
         },
       }),

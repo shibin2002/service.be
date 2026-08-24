@@ -15,7 +15,7 @@ export class EnquiriesController {
   };
 
   create = async (req: AuthRequest, res: Response): Promise<void> => {
-    const data = await enquiriesService.create(req.body);
+    const data = await enquiriesService.create(req.body, req.user!.sub);
     res.status(201).json(successResponse(data, 'Enquiry created'));
   };
 
