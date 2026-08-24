@@ -211,27 +211,28 @@ class AttendanceService {
     const requester = await prisma.user.findUnique({ where: { id: requesterId } });
     if (!requester) throw new NotFoundError('User');
 
-    let roles: Role[];
+    let where: Record<string, unknown>;
+
     if (requester.role === Role.ADMIN) {
-      roles = [Role.TECHNICIAN, Role.MANAGER];
+      where = { deletedAt: null, isActive: true };
     } else if (requester.role === Role.MANAGER) {
-      roles = [Role.TECHNICIAN];
+      where = {
+        AND: [
+          { deletedAt: null, isActive: true },
+          {
+            OR: [
+              { role: Role.TECHNICIAN },
+              { id: requesterId },
+            ],
+          },
+        ],
+      };
     } else {
       return [];
     }
 
     const users = await prisma.user.findMany({
-      where: {
-        AND: [
-          { deletedAt: null, isActive: true },
-          {
-            OR: [
-              { role: { in: roles } },
-              { id: requesterId },
-            ],
-          },
-        ],
-      },
+      where,
       select: { id: true, fullName: true, role: true },
       orderBy: { fullName: 'asc' },
     });
