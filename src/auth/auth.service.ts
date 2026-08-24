@@ -87,14 +87,21 @@ export class AuthService {
     const user = await authRepository.findByEmail(email);
     // Always return success to avoid email enumeration
     if (!user) {
-      return { message: 'If the email exists, a reset token has been generated', resetToken: null };
+      return { message: 'If the email exists, a reset token has been generated' };
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetExpires = new Date(Date.now() + 60 * 60 * 1000);
     await authRepository.setResetToken(user.id, resetToken, resetExpires);
 
-    // In production, send email. For API clients we return token in non-prod.
+    const resetUrl = `${process.env.MOBILE_APP_URL || 'myapp://'}reset-password?token=${resetToken}`;
+
+    if (process.env.NODE_ENV === 'production') {
+      const { sendMail, passwordResetEmail } = await import('../config/email');
+      const emailContent = passwordResetEmail(resetUrl);
+      await sendMail({ to: user.email, ...emailContent });
+    }
+
     return {
       message: 'If the email exists, a reset token has been generated',
       resetToken: process.env.NODE_ENV === 'production' ? null : resetToken,

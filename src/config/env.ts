@@ -20,6 +20,13 @@ const envSchema = z.object({
   APP_NAME: z.string().default('My Store API'),
   SEED_ADMIN_EMAIL: z.string().email().default('admin@servicecenter.com'),
   SEED_ADMIN_PASSWORD: z.string().min(8).default('Admin@12345'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_SECURE: z.coerce.boolean().default(false),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default('My Store <noreply@mystore.com>'),
+  MOBILE_APP_URL: z.string().default('myapp://'),
 });
 
 const parsed = envSchema.safeParse(process.env);
