@@ -1,7 +1,7 @@
 import { Role } from '@prisma/client';
 import prisma from '../prisma/client';
-import { NotFoundError, ForbiddenError, ConflictError } from '../common/errors/AppError';
-import type { MarkAttendanceInput, BulkMarkAttendanceInput, UpdateAttendanceInput } from './attendance.dto';
+import { NotFoundError, ForbiddenError } from '../common/errors/AppError';
+import type { MarkAttendanceInput, BulkMarkAttendanceInput } from './attendance.dto';
 
 class AttendanceService {
   async mark(input: MarkAttendanceInput, markedById: string) {
@@ -169,7 +169,7 @@ class AttendanceService {
     }));
   }
 
-  async getAllAttendance(adminId: string, month?: string, year?: string, userId?: string) {
+  async getAllAttendance(_adminId: string, month?: string, year?: string, userId?: string) {
     const now = new Date();
     const m = month ? parseInt(month) : now.getMonth() + 1;
     const y = year ? parseInt(year) : now.getFullYear();
