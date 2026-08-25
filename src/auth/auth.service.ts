@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Role } from '@prisma/client';
 import { env } from '../config/env';
+import { logger } from '../config/logger';
 import {
   ConflictError,
   ForbiddenError,
@@ -86,7 +87,6 @@ export class AuthService {
 
   async forgotPassword(email: string) {
     const user = await authRepository.findByEmail(email);
-    // Always return success to avoid email enumeration
     if (!user) {
       return { message: 'If the email exists, a reset token has been generated' };
     }
@@ -95,17 +95,28 @@ export class AuthService {
     const resetExpires = new Date(Date.now() + 60 * 60 * 1000);
     await authRepository.setResetToken(user.id, resetToken, resetExpires);
 
+    if (!env.SMTP_HOST) {
+      logger.warn('SMTP_HOST not configured — email not sent');
+      return {
+        message: 'If the email exists, a reset token has been generated',
+        resetToken,
+      };
+    }
+
     const resetUrl = `${process.env.MOBILE_APP_URL || 'myapp://'}reset-password?token=${resetToken}`;
 
-    if (env.SMTP_HOST) {
+    try {
       const { sendMail, passwordResetEmail } = await import('../config/email');
       const emailContent = passwordResetEmail(resetUrl);
       await sendMail({ to: user.email, ...emailContent });
+      logger.info(`Reset email sent to ${user.email}`);
+    } catch (err) {
+      logger.error(`Failed to send reset email to ${user.email}`, err);
+      throw err;
     }
 
     return {
       message: 'If the email exists, a reset token has been generated',
-      resetToken: env.SMTP_HOST ? null : resetToken,
     };
   }
 

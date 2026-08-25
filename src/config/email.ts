@@ -29,6 +29,7 @@ export async function sendMail(options: SendMailOptions): Promise<void> {
     logger.info(`Email sent to ${options.to}`);
   } catch (err) {
     logger.error('Failed to send email', err);
+    throw err;
   }
 }
 
