@@ -50,6 +50,14 @@ export function createApp() {
     res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
   });
 
+  app.get('/', (_req, res) => {
+    res.json({ success: true, status: 'ok' });
+  });
+
+  app.head('/', (_req, res) => {
+    res.sendStatus(200);
+  });
+
   app.use('/uploads', express.static(uploadRoot));
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.get('/docs.json', (_req, res) => res.json(swaggerSpec));
