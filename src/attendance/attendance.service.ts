@@ -119,7 +119,7 @@ class AttendanceService {
       date: r.date.toISOString().split('T')[0],
       status: r.status,
       markedById: r.markedById,
-      markedByName: r.markedBy.fullName,
+      markedByName: r.markedBy?.fullName ?? '—',
       createdAt: r.createdAt,
     }));
   }
@@ -164,7 +164,7 @@ class AttendanceService {
       date: r.date.toISOString().split('T')[0],
       status: r.status,
       markedById: r.markedById,
-      markedByName: r.markedBy.fullName,
+      markedByName: r.markedBy?.fullName ?? '—',
       createdAt: r.createdAt,
     }));
   }
@@ -202,7 +202,7 @@ class AttendanceService {
       date: r.date.toISOString().split('T')[0],
       status: r.status,
       markedById: r.markedById,
-      markedByName: r.markedBy.fullName,
+      markedByName: r.markedBy?.fullName ?? '—',
       createdAt: r.createdAt,
     }));
   }
@@ -245,7 +245,7 @@ class AttendanceService {
     userId: string;
     date: Date;
     status: boolean;
-    markedById: string;
+    markedById: string | null;
     createdAt: Date;
   }) {
     return {

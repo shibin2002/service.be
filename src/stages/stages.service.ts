@@ -66,7 +66,7 @@ export class StagesService {
     }
 
     const inUse = await prisma.serviceJob.count({
-      where: { currentStageId: id, deletedAt: null },
+      where: { currentStageId: id },
     });
     if (inUse > 0) {
       throw new ConflictError('Stage is in use by active jobs');

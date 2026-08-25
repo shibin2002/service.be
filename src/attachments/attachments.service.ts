@@ -22,7 +22,7 @@ export class AttachmentsService {
   ) {
     if (!file) throw new ValidationError('File is required');
 
-    const job = await prisma.serviceJob.findFirst({ where: { id: jobId, deletedAt: null } });
+    const job = await prisma.serviceJob.findFirst({ where: { id: jobId } });
     if (!job) throw new NotFoundError('Service job');
 
     return prisma.attachment.create({

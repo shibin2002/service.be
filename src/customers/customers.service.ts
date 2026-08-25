@@ -39,7 +39,7 @@ export class CustomersService {
       where: { id, deletedAt: null },
       include: {
         devices: {
-          where: { deletedAt: null },
+          where: {},
           include: {
             device: true,
             currentStage: true,
@@ -72,7 +72,7 @@ export class CustomersService {
   async repairHistory(id: string) {
     await this.getById(id);
     return prisma.serviceJob.findMany({
-      where: { customerId: id, deletedAt: null },
+      where: { customerId: id },
       include: {
         device: true,
         currentStage: true,
