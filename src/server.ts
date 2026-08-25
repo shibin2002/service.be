@@ -10,12 +10,8 @@ async function bootstrap() {
     logger.info('Running database migrations...');
     execSync('npx prisma migrate deploy', { stdio: 'inherit' });
     logger.info('Migrations applied successfully');
-
-    logger.info('Seeding database...');
-    execSync('npx prisma db seed', { stdio: 'inherit' });
-    logger.info('Database seeded successfully');
   } catch (err) {
-    logger.error('Migration/seed failed', err);
+    logger.error('Migration failed', err);
   }
 
   const app = createApp();
