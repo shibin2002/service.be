@@ -172,20 +172,19 @@ model ServiceJob {
   diagnosis            String?   @db.Text
   technicianNotes      String?   @map("technician_notes") @db.Text
   assignedTechnicianId String?   @map("assigned_technician_id") @db.Uuid
-  createdById          String    @map("created_by_id") @db.Uuid
+  createdById          String?   @map("created_by_id") @db.Uuid
   priority             Priority  @default(MEDIUM)
   warranty             Boolean   @default(false)
   currentStageId       String    @map("current_stage_id") @db.Uuid
   estimatedDelivery    DateTime? @map("estimated_delivery")
   receivedAt           DateTime  @default(now()) @map("received_at")
-  deletedAt            DateTime? @map("deleted_at")
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
   customer           Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
   device             Device        @relation(fields: [deviceId], references: [id], onDelete: Restrict)
   assignedTechnician User?         @relation("AssignedTechnician", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
-  createdBy          User          @relation("JobCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdBy          User?          @relation("JobCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   currentStage       WorkflowStage @relation(fields: [currentStageId], references: [id], onDelete: Restrict)
   stageLogs          StageLog[]
   payment            Payment?
@@ -199,7 +198,6 @@ model ServiceJob {
   @@index([currentStageId])
   @@index([priority])
   @@index([receivedAt])
-  @@index([deletedAt])
   @@map("service_jobs")
 }
 
@@ -207,13 +205,13 @@ model StageLog {
   id        String   @id @default(uuid()) @db.Uuid
   jobId     String   @map("job_id") @db.Uuid
   stageId   String   @map("stage_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
   note      String?  @db.Text
   createdAt DateTime @default(now()) @map("created_at")
 
   job   ServiceJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
   stage WorkflowStage @relation(fields: [stageId], references: [id], onDelete: Restrict)
-  user  User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user  User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([jobId])
   @@index([stageId])
@@ -260,7 +258,7 @@ model PaymentItem {
 model Attachment {
   id           String         @id @default(uuid()) @db.Uuid
   jobId        String         @map("job_id") @db.Uuid
-  uploadedById String         @map("uploaded_by_id") @db.Uuid
+  uploadedById String?        @map("uploaded_by_id") @db.Uuid
   type         AttachmentType
   fileName     String         @map("file_name")
   originalName String         @map("original_name")
@@ -272,7 +270,7 @@ model Attachment {
   updatedAt    DateTime       @updatedAt @map("updated_at")
 
   job        ServiceJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  uploadedBy User       @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  uploadedBy User?          @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
 
   @@index([jobId])
   @@index([type])
@@ -306,12 +304,12 @@ model Attendance {
   userId      String   @map("user_id") @db.Uuid
   date        DateTime @db.Date
   status      Boolean
-  markedById  String   @map("marked_by_id") @db.Uuid
+  markedById  String?  @map("marked_by_id") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  markedBy User @relation("AttendanceMarkedBy", fields: [markedById], references: [id], onDelete: Restrict)
+  markedBy User?          @relation("AttendanceMarkedBy", fields: [markedById], references: [id], onDelete: SetNull)
 
   @@unique([userId, date])
   @@index([date])

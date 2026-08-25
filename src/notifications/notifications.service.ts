@@ -33,7 +33,7 @@ export class NotificationService {
 
   async notifyNewJob(job: JobWithRelations) {
     const managers = await prisma.user.findMany({
-      where: { deletedAt: null, isActive: true, role: { in: ['ADMIN', 'MANAGER'] } },
+      where: { isActive: true, role: { in: ['ADMIN', 'MANAGER'] } },
       select: { id: true },
     });
 

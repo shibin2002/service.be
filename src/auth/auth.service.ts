@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Role } from '@prisma/client';
+import { env } from '../config/env';
 import {
   ConflictError,
   ForbiddenError,
@@ -96,7 +97,7 @@ export class AuthService {
 
     const resetUrl = `${process.env.MOBILE_APP_URL || 'myapp://'}reset-password?token=${resetToken}`;
 
-    if (process.env.NODE_ENV === 'production') {
+    if (env.SMTP_HOST) {
       const { sendMail, passwordResetEmail } = await import('../config/email');
       const emailContent = passwordResetEmail(resetUrl);
       await sendMail({ to: user.email, ...emailContent });
@@ -104,7 +105,7 @@ export class AuthService {
 
     return {
       message: 'If the email exists, a reset token has been generated',
-      resetToken: process.env.NODE_ENV === 'production' ? null : resetToken,
+      resetToken: env.SMTP_HOST ? null : resetToken,
     };
   }
 

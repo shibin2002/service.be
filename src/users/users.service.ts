@@ -50,20 +50,20 @@ export class UsersService {
   }
 
   async getById(id: string) {
-    const user = await prisma.user.findFirst({ where: { id, deletedAt: null }, select: safeSelect });
+    const user = await prisma.user.findFirst({ where: { id }, select: safeSelect });
     if (!user) throw new NotFoundError('User');
     return user;
   }
 
   async getFullById(id: string) {
-    const user = await prisma.user.findFirst({ where: { id, deletedAt: null } });
+    const user = await prisma.user.findFirst({ where: { id } });
     if (!user) throw new NotFoundError('User');
     return user;
   }
 
   async create(dto: CreateUserDto, actorRole?: Role) {
     const existing = await prisma.user.findFirst({
-      where: { email: dto.email.toLowerCase(), deletedAt: null },
+      where: { email: dto.email.toLowerCase() },
     });
     if (existing) {
       throw new ConflictError('Email already registered');
@@ -90,6 +90,15 @@ export class UsersService {
   async update(id: string, dto: UpdateUserDto, actor?: JwtPayload) {
     const user = await this.getFullById(id);
 
+    if (dto.email && dto.email.toLowerCase() !== user.email) {
+      const emailTaken = await prisma.user.findFirst({
+        where: { email: dto.email.toLowerCase(), id: { not: id } },
+      });
+      if (emailTaken) {
+        throw new ConflictError('Email already registered');
+      }
+    }
+
     if (dto.isActive === false) {
       if (user.role === Role.ADMIN) {
         throw new ForbiddenError('Admin accounts cannot be deactivated');
@@ -110,7 +119,7 @@ export class UsersService {
 
     return prisma.user.update({
       where: { id },
-      data: dto,
+      data: { ...dto, email: dto.email ? dto.email.toLowerCase() : undefined },
       select: safeSelect,
     });
   }
@@ -125,9 +134,8 @@ export class UsersService {
       throw new ForbiddenError('You cannot delete your own account');
     }
 
-    await prisma.user.update({
+    await prisma.user.delete({
       where: { id },
-      data: { deletedAt: new Date(), isActive: false, refreshToken: null },
     });
     return { message: 'User deleted' };
   }
@@ -135,7 +143,7 @@ export class UsersService {
   async listTechnicians(actor?: JwtPayload) {
     const roles: Role[] = actor?.role === Role.ADMIN ? [Role.TECHNICIAN, Role.MANAGER] : [Role.TECHNICIAN];
     return prisma.user.findMany({
-      where: { deletedAt: null, role: { in: roles } },
+      where: { role: { in: roles } },
       select: safeSelect,
       orderBy: { fullName: 'asc' },
     });

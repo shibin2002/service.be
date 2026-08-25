@@ -16,6 +16,7 @@ export const createUserSchema = z.object({
 });
 
 export const updateUserSchema = z.object({
+  email: z.string().email().optional(),
   fullName: z.string().min(2).max(120).optional(),
   phone: z.string().min(7).max(20).optional().nullable(),
   role: z.nativeEnum(Role).optional(),

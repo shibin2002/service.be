@@ -56,7 +56,6 @@ export class ServiceJobsService {
     const { page, limit, skip } = getPagination(query);
 
     const where: Prisma.ServiceJobWhereInput = {
-      deletedAt: null,
       ...(query.stageId ? { currentStageId: query.stageId } : {}),
       ...(query.status ? { currentStage: { slug: query.status } } : {}),
       ...(query.technicianId ? { assignedTechnicianId: query.technicianId } : {}),
@@ -110,7 +109,7 @@ export class ServiceJobsService {
 
   async getById(id: string) {
     const job = await prisma.serviceJob.findFirst({
-      where: { id, deletedAt: null },
+      where: { id },
       include: jobInclude,
     });
     if (!job) throw new NotFoundError('Service job');
@@ -119,7 +118,7 @@ export class ServiceJobsService {
 
   async getByJobNumber(jobNumber: string) {
     const job = await prisma.serviceJob.findFirst({
-      where: { jobNumber, deletedAt: null },
+      where: { jobNumber },
       include: jobInclude,
     });
     if (!job) throw new NotFoundError('Service job');
@@ -260,7 +259,7 @@ export class ServiceJobsService {
 
   async softDelete(id: string) {
     await this.getById(id);
-    await prisma.serviceJob.update({ where: { id }, data: { deletedAt: new Date() } });
+    await prisma.serviceJob.delete({ where: { id } });
     return { message: 'Service job deleted' };
   }
 
@@ -282,22 +281,21 @@ export class ServiceJobsService {
       delivered,
       pendingPayments,
     ] = await Promise.all([
-      prisma.serviceJob.count({ where: { deletedAt: null } }),
-      prisma.serviceJob.count({ where: { deletedAt: null, receivedAt: { gte: startOfDay } } }),
+      prisma.serviceJob.count({ where: {} }),
+      prisma.serviceJob.count({ where: { receivedAt: { gte: startOfDay } } }),
       prisma.serviceJob.count({
         where: {
-          deletedAt: null,
           currentStage: { slug: { in: ['inspection', 'waiting-for-approval', 'repairing', 'quality-check'] } },
         },
       }),
       prisma.serviceJob.count({
-        where: { deletedAt: null, currentStage: { slug: 'waiting-for-parts' } },
+        where: { currentStage: { slug: 'waiting-for-parts' } },
       }),
       prisma.serviceJob.count({
-        where: { deletedAt: null, currentStage: { slug: 'ready-for-pickup' } },
+        where: { currentStage: { slug: 'ready-for-pickup' } },
       }),
       prisma.serviceJob.count({
-        where: { deletedAt: null, currentStage: { slug: 'delivered' } },
+        where: { currentStage: { slug: 'delivered' } },
       }),
       prisma.payment.count({
         where: { deletedAt: null, status: { in: [PaymentStatus.PENDING, PaymentStatus.PARTIAL] } },
@@ -310,7 +308,7 @@ export class ServiceJobsService {
         slug: stage.slug,
         color: stage.color,
         count: await prisma.serviceJob.count({
-          where: { deletedAt: null, currentStageId: stage.id },
+          where: { currentStageId: stage.id },
         }),
       })),
     );
@@ -322,7 +320,7 @@ export class ServiceJobsService {
       const to = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
       const [count, paid] = await Promise.all([
         prisma.serviceJob.count({
-          where: { deletedAt: null, receivedAt: { gte: from, lt: to } },
+          where: { receivedAt: { gte: from, lt: to } },
         }),
         prisma.payment.aggregate({
           where: {

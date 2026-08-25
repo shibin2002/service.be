@@ -4,13 +4,13 @@ import prisma from '../prisma/client';
 export class AuthRepository {
   findByEmail(email: string): Promise<User | null> {
     return prisma.user.findFirst({
-      where: { email: email.toLowerCase(), deletedAt: null },
+      where: { email: email.toLowerCase() },
     });
   }
 
   findById(id: string): Promise<User | null> {
     return prisma.user.findFirst({
-      where: { id, deletedAt: null },
+      where: { id },
     });
   }
 
@@ -51,7 +51,6 @@ export class AuthRepository {
       where: {
         resetToken: token,
         resetExpires: { gt: new Date() },
-        deletedAt: null,
       },
     });
   }

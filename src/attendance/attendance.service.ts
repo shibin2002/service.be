@@ -214,11 +214,11 @@ class AttendanceService {
     let where: Record<string, unknown>;
 
     if (requester.role === Role.ADMIN) {
-      where = { deletedAt: null, isActive: true };
+      where = { isActive: true };
     } else if (requester.role === Role.MANAGER) {
       where = {
         AND: [
-          { deletedAt: null, isActive: true },
+          { isActive: true },
           {
             OR: [
               { role: Role.TECHNICIAN },
